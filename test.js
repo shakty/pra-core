@@ -10,9 +10,12 @@ var feats = require('./lib/features');
 
 var featnames = feats.featnames.all;
 
+
+
 var PL = pra.pl('./data/com_rand_25_jan_2013/');
 
 var db = pra.db('./data/com_rand_25_jan_2013/', 'all_cf_sub_eva_copy.nddb');
+
 
 
 
