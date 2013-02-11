@@ -4,6 +4,8 @@ data
 *.csv
 *.nddb
 
+data
+
 node_modules
 
 *~
