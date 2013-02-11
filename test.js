@@ -8,27 +8,10 @@ var fs = require('fs'),
 
 var feats = require('./lib/features');
 
+var times = fs.readFileSync('./data/times.js', 'utf-8');
+	times = JSON.parse(times);
+
 var featnames = feats.featnames.all;
-
-var PL = pra.pl('./data/com_rand_25_jan_2013/');
-
-var db = pra.db('./data/com_rand_25_jan_2013/', 'all_cf_sub_eva_copy.nddb');
-
-var db_all = pra.db('./data/com_rand_25_jan_2013/', 'pr_4.3.30.nddb');
-
-
-var db_reviews = new NDDB();
-db_reviews.load('./data/com_rand_25_jan_2013/all_reviews.nddb');
-
-db_reviews.h('player', function(e){
-	return e.player;
-});
-db_reviews.rebuildIndexes();
-//console.log(db_reviews.first());
-
-
-var fileout = './data/com_rand_25_jan_2013/pr_new.csv';
-var writer = csv.createCsvStreamWriter(fs.createWriteStream(fileout));
 
 var sessions = {
              // 25 JAN 2013
@@ -282,28 +265,40 @@ var headings = [
 ///////////////////////////////////////////////
 // START
 
-var session = 'com_rand_25_jan_2013';
-
-var sessionData = getSessionData(session);
-
+var prefix = './data/';
+var fileout = './data/pr_new.csv';
+var writer = csv.createCsvStreamWriter(fs.createWriteStream(fileout));
 writer.writeRecord(headings);	
 
-var DIR = './data/' + session;
-var fullRow;
-db.each(function(e) {
+var sessionData, PL, db, db_all, db_reviews, path;
+for (var session in sessions) {
+
+	path = prefix + session + '/';
 	
-//	console.log(getCFValues(e))
-	fullRow = sessionData.concat(buildRoundRow(e, DIR));
-	writer.writeRecord(fullRow);
-});
+	PL = pra.pl(path);
+	db = pra.db(path, 'all_cf_sub_eva_copy.nddb');
+	db_all = pra.db(path, 'pr_4.3.30.nddb');
+
+	db_reviews = new NDDB();
+	db_reviews.load(path + all_reviews.nddb);
+	db_reviews.h('player', function(e){
+		return e.player;
+	});
+	db_reviews.rebuildIndexes();
+	//console.log(db_reviews.first());
+	
+	sessionData = getSessionData(session);
+	var fullRow;
+	db.each(function(e) {
+		fullRow = sessionData.concat(buildRoundRow(e, session));
+		writer.writeRecord(fullRow);
+	});
+}
+
 
 //console.log(db_reviews.player);
 
 //console.log(retrieveEvas('960748814137269343', 6));
-
-function buildTimesTable(DIR) {
-	
-}
 
 function getTimeFromFS(DIR, round) {
     var myStat = fs.statSync(DIR + '/' + 'pr_4.3.' + round + '.nddb');
@@ -311,6 +306,9 @@ function getTimeFromFS(DIR, round) {
     return dt.getTime();
 }
 
+function getTimeFromLoadedTable(session, round) {
+	return times[session][round];
+}
 
 
 function getAllRoundTimesFromFS() {
@@ -320,9 +318,16 @@ function getAllRoundTimesFromFS() {
 	for (var session in sessions) {
 		times[session] = {};
 		for (var round = 1; round < 31 ; round++) {
-	         myStat = fs.statSync(sessions[session].serverdir + 'pr_4.3.' + round + '.nddb');
-	         dt = new Date(myStat.mtime);
-	         times[session][round] = dt.getTime();
+			try {
+				myStat = fs.statSync(sessions[session].serverdir + 'pr_4.3.' + round + '.nddb');
+		        dt = new Date(myStat.mtime);
+		        times[session][round] = dt.getTime();
+			}
+			catch (e) {
+				console.log('An exception occurred ' + e);
+				times[session][round] = 'NA';
+			}
+	         
 		}
 	}
 	
@@ -331,13 +336,13 @@ function getAllRoundTimesFromFS() {
 
 
 
-function getRelativeRoundTime(e, DIR) {
+function getRelativeRoundTime(e, session) {
 	
 	var startTime_creation, startTime_review, startTime_diss;
 	var stopTime_creation, stopTime_review, stopTime_diss;
 	
 	 
-	startTime_creation = (e.state.round !== 1) ? getTimeFromFS(DIR, (e.state.round-1))
+	startTime_creation = (e.state.round !== 1) ? getTimeFromLoadedTable(session, (e.state.round-1))
 											   : 'NA';
 	
 	
@@ -352,7 +357,7 @@ function getRelativeRoundTime(e, DIR) {
 														  .select('key', '=', 'EVA')
 														  .first().time;
 	
-	stopTime_diss = getTimeFromFS(DIR, e.state.round);
+	stopTime_diss = getTimeFromLoadedTable(session, e.state.round);
 	
 	
 	return [
@@ -541,7 +546,7 @@ function retrieveEvas(player, round) {
 }
 
 
-function buildRoundRow(e, DIR) {
+function buildRoundRow(e, session) {
 	var player = getPlayerData(e);
 	var round = getRound(e);
 	var cf = getCFValues(e);
@@ -551,8 +556,8 @@ function buildRoundRow(e, DIR) {
 	var reviews = getReviews(e);
 	var evas = getEvaluations(e);
 	var copy = getCopyData(e);
-	var time = getRelativeRoundTime(e, DIR);
-	console.log(time)
+	var time = getRelativeRoundTime(e, session);
+	//console.log(time)
 	
 	var row = player.concat([round])
 					.concat(cf)
