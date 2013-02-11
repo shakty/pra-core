@@ -10,13 +10,11 @@ var feats = require('./lib/features');
 
 var featnames = feats.featnames.all;
 
-
-
 var PL = pra.pl('./data/com_rand_25_jan_2013/');
 
 var db = pra.db('./data/com_rand_25_jan_2013/', 'all_cf_sub_eva_copy.nddb');
 
-
+var db_all = pra.db('./data/com_rand_25_jan_2013/', 'pr_4.3.30.nddb');
 
 
 var db_reviews = new NDDB();
@@ -165,19 +163,34 @@ var headings = [
                 'round',
                 
                 // features
-                'head_radius',
-                'head_scale_x',
-                'head_scale_y',
-                'eye_height',
-                'eye_spacing',
-                'eye_scale_x',
-                'eye_scale_y',
-                'eyebrow_length',
-                'eyebrow_eyedistance',
-                'eyebrow_angle',
-                'eyebrow_spacing',
-                'mouth_top_y',
-                'mouth_bottom_y',
+                'f.head_radius',
+                'f.head_scale_x',
+                'f.head_scale_y',
+                'f.eye_height',
+                'f.eye_spacing',
+                'f.eye_scale_x',
+                'f.eye_scale_y',
+                'f.eyebrow_length',
+                'f.eyebrow_eyedistance',
+                'f.eyebrow_angle',
+                'f.eyebrow_spacing',
+                'f.mouth_top_y',
+                'f.mouth_bottom_y',
+                
+                // features
+                'f.norm.head_radius',
+                'f.norm.head_scale_x',
+                'f.norm.head_scale_y',
+                'f.norm.eye_height',
+                'f.norm.eye_spacing',
+                'f.norm.eye_scale_x',
+                'f.norm.eye_scale_y',
+                'f.norm.eyebrow_length',
+                'f.norm.eyebrow_eyedistance',
+                'f.norm.eyebrow_angle',
+                'f.norm.eyebrow_spacing',
+                'f.norm.mouth_top_y',
+                'f.norm.mouth_bottom_y',
                 
                 // ex
                 'ex',
@@ -231,10 +244,19 @@ var headings = [
                 'e.mean',
                 'e.std',
                 
+                // copy
+                'copy',
+                'copy.from.id',
+                'copy.from.color',
+                'copy.score',
+                'copy.round',
+                'copy.ex',
+                 
+
                 // time for
-                //'time.creation',
-                //'time.review',
-                //'time.dissemination'
+                'time.creation',
+                'time.review',
+                'time.dissemination'
                 
                 // distance 
                 // ...
@@ -244,15 +266,18 @@ var headings = [
 ///////////////////////////////////////////////
 // START
 
+var session = 'com_rand_25_jan_2013';
 
-var sessionData = getSessionData('com_rand_25_jan_2013');
+var sessionData = getSessionData(session);
 
 writer.writeRecord(headings);	
 
+var DIR = './data/' + session;
 var fullRow;
 db.each(function(e) {
+	
 //	console.log(getCFValues(e))
-	fullRow = sessionData.concat(buildRoundRow(e));
+	fullRow = sessionData.concat(buildRoundRow(e, DIR));
 	writer.writeRecord(fullRow);
 });
 
@@ -260,6 +285,79 @@ db.each(function(e) {
 
 //console.log(retrieveEvas('960748814137269343', 6));
 
+function getTimeFromFS(DIR, round) {
+    var myStat = fs.statSync(DIR + '/' + 'pr_4.3.' + round + '.nddb');
+    var dt = new Date(myStat.mtime);
+    return dt.getTime();
+}
+
+
+
+// WORKING ON THIS
+//function getAllRoundTimesFromFS() {
+//	var prefix = './data/',
+//		times = {};
+//	
+//	var dir, myStat, dt, milliseconds;
+//	for (var session in sessions) {
+//		times[session] = {};
+//		for (var round = 1; round < 31 ; round++) {
+//	         myStat = fs.statSync(prefix + session + '/' + 'pr_4.3.' + round + '.nddb');
+//	         dt = new Date(myStat.mtime);
+//	         times[session][round] = dt.getTime();
+//		}
+//	}
+//	
+//	return times;
+//}
+
+
+
+function getRelativeRoundTime(e, DIR) {
+	
+	var startTime_creation, startTime_review, startTime_diss;
+	var stopTime_creation, stopTime_review, stopTime_diss;
+	
+	 
+	startTime_creation = (e.state.round !== 1) ? getTimeFromFS(DIR, (e.state.round-1))
+											   : 'NA';
+	
+	
+	startTime_review = db_all.state['4.1.' + e.state.round].max('time');
+	startTime_diss = db_all.state['4.2.' + e.state.round].max('time');
+	
+	stopTime_creation = db_all.state['4.1.' + e.state.round].select('player', '=', e.player.id)
+															.select('key', '=', 'CF')
+															.first().time;
+	
+	stopTime_review = db_all.state['4.2.' + e.state.round].select('player', '=', e.player.id)
+														  .select('key', '=', 'EVA')
+														  .first().time;
+	
+	stopTime_diss = getTimeFromFS(DIR, e.state.round);
+	
+	
+	return [
+	        (startTime_creation == 'NA') ? 'NA' : (stopTime_creation - startTime_creation) / 1000,
+	        (stopTime_review - startTime_review) / 1000,
+	        (stopTime_diss - startTime_diss) / 1000
+	        ];
+}
+
+function getCopyData(e) {
+	if (!e.copy) {
+		return [0, 'NA', 'NA', 'NA', 'NA', 'NA'];
+	}
+	else {
+		return [1, 
+		        e.copy.copied_from.id,
+		        e.copy.copied_from.color,
+		        e.copy.copied_score,
+		        e.copy.copied_round,
+		        e.copy.copied_ex,
+		        ];
+	}
+}
 
 function getRound(e) {
 	return e.state.round;
@@ -288,6 +386,25 @@ function getTreatments(dir) {
 	
 	return [com, coo, choice, rand];
 	
+}
+
+function getNormalizedCFValues(e) {
+	var cf = J.subobj(e.value, featnames);
+	
+	for (var f in cf) {
+		if (cf.hasOwnProperty(f)) {
+			cf[f] = normalizeFeature(f, cf[f]);
+		}
+	}
+	
+	return J.obj2Array(cf);
+}
+
+function normalizeFeature(feat, value, scale) {
+	scale = scale || 100;
+	var range = feats.features[feat].max - feats.features[feat].min;
+	var newValue = Math.abs(value - feats.features[feat].min) / range;
+	return newValue * scale; 
 }
 
 function getSessionData(dir) {
@@ -406,16 +523,27 @@ function retrieveEvas(player, round) {
 }
 
 
-function buildRoundRow(e) {
+function buildRoundRow(e, DIR) {
 	var player = getPlayerData(e);
 	var round = getRound(e);
 	var cf = getCFValues(e);
+	var cf_norm = getNormalizedCFValues(e);
 	var published = getPublished(e);
 	var ex_and_pub = [e.ex, published];
 	var reviews = getReviews(e);
 	var evas = getEvaluations(e);
+	var copy = getCopyData(e);
+	var time = getRelativeRoundTime(e, DIR);
+	console.log(time)
 	
-	var row = player.concat([round]).concat(cf).concat(ex_and_pub).concat(reviews).concat(evas);
+	var row = player.concat([round])
+					.concat(cf)
+					.concat(cf_norm)
+					.concat(ex_and_pub)
+					.concat(reviews)
+					.concat(evas)
+					.concat(copy)
+					.concat(time);
 	
 	return row;
 }
