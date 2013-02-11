@@ -36,91 +36,105 @@ var sessions = {
             	 date: '25-01-2013',
             	 after: 0,
             	 morn: 1,
-            	 id: 1
+            	 id: 1,
+            	 serverdir: '25Jan2013/games/com_rand_1/server/out/'
              },
              'com_choice_25_jan_2013': {
         	 	date: '25-01-2013',
         	 	after: 1,
         	 	morn: 0,
-        	 	id: 2
+        	 	id: 2,
+        	 	serverdir: '25Jan2013/games/PR4/server/out/'
         	 },
              // 30 JAN 2013
              'coo_rand_30_jan_2013': {
             	 date: '30-01-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 3
+         	 	 id: 3,
+         	 	 serverdir: '30Jan2013/games/coo_rand/server/out/'
              },
              'coo_choice_30_jan_2013': {
             	 date: '30-01-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 4
+         	 	 id: 4,
+         	 	 serverdir: '30Jan2013/games/coo_choice/server/out/'
              },
              // 31 JAN 2013
              'com_choice_31_jan_2013': {
             	 date: '31-01-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 5
+         	 	 id: 5,
+         	 	 serverdir: '31Jan2013/games/com_choice/server/out/'
              },
              'coo_rand_31_jan_2013': {
             	 date: '31-01-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 6
+         	 	 id: 6,
+         	 	 serverdir: '31Jan2013/games/coo_rand/server/out/'
              },
              // 1 FEB 2013
              'com_rand_1_feb_2013': {
             	 date: '01-02-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 7
+         	 	 id: 7,
+         	 	 serverdir: '1Feb2013/games/com_rand/server/out/'
              },
              'coo_choice_1_feb_2013': {
             	 date: '01-02-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 8
+         	 	 id: 8,
+         	 	 serverdir: '1Feb2013/games/coo_choice/server/out/'
              },
              // 4 FEB 2013
              'com_rand_4_feb_2013': {
             	 date: '04-02-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 9
+         	 	 id: 9,
+         	 	 serverdir: '4Feb2013/games/com_rand/server/out/'
              },
              'coo_rand_4_feb_2013': {
             	 date: '04-02-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 10
+         	 	 id: 10,
+         	 	 serverdir: '4Feb2013/games/coo_rand/server/out/'
              },
              // 6 FEB 2013
              'coo_choice_6_feb_2013': {
             	 date: '06-02-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 11
+         	 	 id: 11,
+         	 	 serverdir: '6Feb2013/games/coo_choice/server/out/'
              },
              'com_choice_6_feb_2013': {
             	 date: '06-02-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 12
+         	 	 id: 12,
+         	 	serverdir: '6Feb2013/games/com_choice/server/out/'
              },
              // 7 FEB 2013
              'com_rand_7_feb_2013': {
             	 date: '07-02-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 13
+         	 	 id: 13,
+         	 	 serverdir: '7Feb2013/games/com_rand/server/out/'
              },
              'coo_rand_7_feb_2013': {
             	 date: '07-02-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 14
+         	 	 id: 14,
+         	 	 serverdir: '7Feb2013/games/coo_rand/server/out/'
             	 
              },
              // 8 FEB 2013
@@ -128,13 +142,15 @@ var sessions = {
             	 date: '08-02-2013',
             	 after: 0,
             	 morn: 1,
-         	 	 id: 15
+         	 	 id: 15,
+         	 	 serverdir: '8Feb2013/games/com_choice/server/out/'
              },
              'coo_choice_feb_2013': {
             	 date: '08-02-2013',
             	 after: 1,
             	 morn: 0,
-         	 	 id: 16
+         	 	 id: 16,
+         	 	 serverdir: '1Feb2013/games/coo_choice/server/out/'
              }
 };
 
@@ -285,6 +301,10 @@ db.each(function(e) {
 
 //console.log(retrieveEvas('960748814137269343', 6));
 
+function buildTimesTable(DIR) {
+	
+}
+
 function getTimeFromFS(DIR, round) {
     var myStat = fs.statSync(DIR + '/' + 'pr_4.3.' + round + '.nddb');
     var dt = new Date(myStat.mtime);
@@ -293,23 +313,21 @@ function getTimeFromFS(DIR, round) {
 
 
 
-// WORKING ON THIS
-//function getAllRoundTimesFromFS() {
-//	var prefix = './data/',
-//		times = {};
-//	
-//	var dir, myStat, dt, milliseconds;
-//	for (var session in sessions) {
-//		times[session] = {};
-//		for (var round = 1; round < 31 ; round++) {
-//	         myStat = fs.statSync(prefix + session + '/' + 'pr_4.3.' + round + '.nddb');
-//	         dt = new Date(myStat.mtime);
-//	         times[session][round] = dt.getTime();
-//		}
-//	}
-//	
-//	return times;
-//}
+function getAllRoundTimesFromFS() {
+	var times = {};
+	
+	var dir, myStat, dt, milliseconds;
+	for (var session in sessions) {
+		times[session] = {};
+		for (var round = 1; round < 31 ; round++) {
+	         myStat = fs.statSync(sessions[session].serverdir + 'pr_4.3.' + round + '.nddb');
+	         dt = new Date(myStat.mtime);
+	         times[session][round] = dt.getTime();
+		}
+	}
+	
+	return times;
+}
 
 
 
