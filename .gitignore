@@ -9,3 +9,8 @@ data
 node_modules
 
 *~
+
+\#*
+#*
+.#*
+_*
